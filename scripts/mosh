@@ -37,6 +37,7 @@ use strict;
 use Getopt::Long;
 use IO::Socket;
 use Net::DNS;
+use Data::Validate::IP qw(is_ipv4 is_ipv6);
 
 $|=1;
 
@@ -242,13 +243,17 @@ if (defined $autoipv6 || $family eq 'inet6') {
   if ($userhost =~ /\@/) {
     ($user, $autohostname) = split("\@", $userhost);
   }
-  my $reply = $resolver->query( $autohostname, 'AAAA' );
-  if ($reply) {
-    foreach my $rr (grep { $_->type eq 'AAAA' } $reply->answer) {
-        $family = 'inet6';
-        $hasipv6 = 1;
-        $ssh = $ssh . " -6";
-        $userhostip = $rr->address;
+  if (is_ipv4($autohostname)) {
+    $userhostip = $autohostname;
+  } else {
+    my $reply = $resolver->query( $autohostname, 'AAAA' );
+    if ($reply) {
+      foreach my $rr (grep { $_->type eq 'AAAA' } $reply->answer) {
+          $family = 'inet6';
+          $hasipv6 = 1;
+          $ssh = $ssh . " -6";
+          $userhostip = $rr->address;
+      }
     }
   }
 }
@@ -260,12 +265,16 @@ if (not $hasipv6) {
   if ($userhost =~ /\@/) {
     ($user, $autohostname) = split("\@", $userhost);
   }
-  my $reply = $resolver->query( $autohostname, 'A' );
-  if ($reply) {
-    foreach my $rr (grep { $_->type eq 'A' } $reply->answer) {
-        $family = 'inet';
-        $ssh = $ssh;
-        $userhostip = $rr->address;
+  if (is_ipv6($autohostname)) {
+    $userhostip = $autohostname;
+  } else {
+    my $reply = $resolver->query( $autohostname, 'A' );
+    if ($reply) {
+      foreach my $rr (grep { $_->type eq 'A' } $reply->answer) {
+          $family = 'inet';
+          $ssh = $ssh;
+          $userhostip = $rr->address;
+      }
     }
   }
 }
