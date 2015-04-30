@@ -253,7 +253,7 @@ if (defined $autoipv6 || $family eq 'inet6') {
   }
 }
 
-if (!$hasipv6) {
+if (not $hasipv6) {
   my $autohostname = $userhost;
   my $user;
 
@@ -268,6 +268,11 @@ if (!$hasipv6) {
         $userhostip = $rr->address;
     }
   }
+}
+
+if (not defined $userhostip) {
+  print STDERR "Cannot resolve " . $userhost . "\n";
+  exit;
 }
 
 my @command = @ARGV;
